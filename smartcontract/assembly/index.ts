@@ -21,6 +21,11 @@ export function addNewMeal(meal: Meal): void {
     if (storedMeal !== null) {
         throw new Error(`a meal with id=${meal.id} already exists`);
     }
+    let paymentAddr = getPaymentAddress();
+    assert(context.predecessor == context.contractName || context.predecessor == paymentAddr.toString(), "Not an admin");
+    assert(meal.image.length > 0, "Empty image");
+    assert(meal.name.length > 0, "Empty name");
+    assert(meal.price > u128.Zero, "Invalid price");
     mealStorage.set(meal.id, Meal.fromPayload(meal));
 }
 
@@ -84,8 +89,9 @@ export function placeOrder(orderInfo: OrderInfo): void {
  * @returns an array for a given @param accountId
  */
 export function getUserOrders(accountId: string): Array<String> {
+    // account ids on testnet ends with ".testnet"
+    assert(accountId.length > 8, "Invalid account Id");
     let userOrder = userOrders.get(accountId);
-
     if (userOrder == null) {
         return new Array<String>();
     } else {
@@ -107,6 +113,7 @@ export function getOrderInfo(id: string): OrderInfo | null {
 /**
  * 
  * A function that deletes the order information for given order id
+ * @notice only the order's owner can delete the item
  * 
  * @param id - an identifier of the order to be deleted
  */
@@ -115,5 +122,14 @@ export function deleteOrder(id: string): void {
     if (order == null) {
         throw new Error(`Order ${id} does not exist`);
     }
+    let currentUserOrders = getUserOrders(context.predecessor);
+    if (currentUserOrders == null) {
+        throw new Error(`Sender doesn't have any orders.`);
+    }
+    let index = currentUserOrders.indexOf(id);
+    assert(index > - 1, "You don't own this order");
+    // removes orderId from current user's orders
+    currentUserOrders.splice(index, 1);
+    userOrders.set(context.predecessor, currentUserOrders);
     orderStorage.delete(id);
 }
