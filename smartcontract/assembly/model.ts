@@ -7,6 +7,8 @@ export class Meal {
     image: string;
     price: u128;
     sold: u32;
+
+    // initialises a new meal
     public static fromPayload(payload: Meal): Meal {
         const meal = new Meal();
         meal.id = payload.id;
@@ -15,6 +17,8 @@ export class Meal {
         meal.price = payload.price;
         return meal;
     }
+
+    // increments sold amount
     public incrementSoldAmount(): void {
         this.sold = this.sold + 1;
     }
@@ -32,7 +36,7 @@ export class OrderInfo {
     orders: Array<Order>;
     total: u128;
     date: u64;
-
+    // initialises a new object containing an order's informations
     public static fromPayload(payload: OrderInfo, total: u128): OrderInfo {
         const newOrder = new OrderInfo();
         newOrder.id = payload.id;
@@ -42,9 +46,13 @@ export class OrderInfo {
         return newOrder;
     }
 
+    // calculates the due amount for order
     public static getTotal(payload: OrderInfo): u128 {
         let orders = payload.orders;
         let total = u128.from(0);
+        // loops through each meals ordered
+        // amount for each specific meal is calculated by multiplying the amount ordered for a meal with the meal's price
+        // this amount is then added to the total amount
         for (let i = 0; i < orders.length; i++) {
             let order = orders[i];
 
@@ -60,6 +68,10 @@ export class OrderInfo {
     }
 }
 
+/**
+ * @dev allows the admin to update and change the payment's address
+ * @param address new address for payment
+ */
 export function setPaymentAddress(address: string): void {
     storage.set<string>("pAddr", address)
 }
